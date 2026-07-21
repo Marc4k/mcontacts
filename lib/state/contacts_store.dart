@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import '../data/device_contacts.dart';
 import '../data/mock_contacts.dart';
 import '../models/contact.dart';
 
@@ -8,6 +9,12 @@ class ContactsStore extends ChangeNotifier {
   ContactsStore() : _contacts = buildMockContacts();
 
   final List<Contact> _contacts;
+
+  bool _isImporting = false;
+  bool get isImporting => _isImporting;
+
+  /// Human-readable result of the most recent [loadFromDevice] call.
+  String? statusMessage;
 
   List<Contact> get contacts => List.unmodifiable(_contacts);
 
@@ -33,6 +40,33 @@ class ContactsStore extends ChangeNotifier {
   void addContact(Contact contact) {
     _contacts.add(contact);
     notifyListeners();
+  }
+
+  /// Requests permission and replaces the list with the device's contacts.
+  /// Sets [statusMessage] to describe the outcome; safe to call repeatedly.
+  Future<void> loadFromDevice() async {
+    if (_isImporting) return;
+    _isImporting = true;
+    statusMessage = null;
+    notifyListeners();
+
+    try {
+      final result = await fetchDeviceContacts();
+      if (!result.granted) {
+        statusMessage = 'Contacts permission denied';
+      } else {
+        _contacts
+          ..clear()
+          ..addAll(result.contacts);
+        statusMessage = 'Imported ${result.contacts.length} '
+            'contact${result.contacts.length == 1 ? '' : 's'}';
+      }
+    } catch (e) {
+      statusMessage = 'Could not read contacts: $e';
+    } finally {
+      _isImporting = false;
+      notifyListeners();
+    }
   }
 }
 

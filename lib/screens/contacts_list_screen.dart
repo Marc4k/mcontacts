@@ -34,6 +34,17 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     super.dispose();
   }
 
+  Future<void> _importFromDevice() async {
+    final store = ContactsScope.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    await store.loadFromDevice();
+    if (!mounted) return;
+    final message = store.statusMessage;
+    if (message != null) {
+      messenger.showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
   void _scrollToLetter(String letter) {
     final key = _sectionKeys[letter];
     final ctx = key?.currentContext;
@@ -63,7 +74,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
           body: SafeArea(
             child: Column(
               children: [
-                _buildHeader(context, allContacts.length),
+                _buildHeader(context, allContacts.length, store.isImporting),
                 Expanded(
                   child: isSearching
                       ? _SearchResults(query: query, results: results)
@@ -81,25 +92,82 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, int count) {
+  Widget _buildHeader(BuildContext context, int count, bool isImporting) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(26, 10, 26, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '$count people',
-            style: AppText.sans(
-              size: 11,
-              weight: FontWeight.w400,
-              color: AppColors.accent,
-              letterSpacing: 2.2,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                '$count people',
+                style: AppText.sans(
+                  size: 11,
+                  weight: FontWeight.w400,
+                  color: AppColors.accent,
+                  letterSpacing: 2.2,
+                ),
+              ),
+              _ImportButton(
+                isLoading: isImporting,
+                onTap: isImporting ? null : _importFromDevice,
+              ),
+            ],
           ),
           Text('Contacts', style: AppText.serifHeading(size: 58)),
           const SizedBox(height: 18),
           _SearchBar(controller: _searchController),
         ],
+      ),
+    );
+  }
+}
+
+class _ImportButton extends StatelessWidget {
+  const _ImportButton({required this.isLoading, required this.onTap});
+
+  final bool isLoading;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.surfaceBorder),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isLoading)
+              SizedBox(
+                width: 13,
+                height: 13,
+                child: CircularProgressIndicator(
+                  strokeWidth: 1.6,
+                  color: AppColors.accent,
+                ),
+              )
+            else
+              Icon(Icons.download_rounded, size: 15, color: AppColors.accent),
+            const SizedBox(width: 7),
+            Text(
+              isLoading ? 'Importing…' : 'Import',
+              style: AppText.sans(
+                size: 12,
+                weight: FontWeight.w600,
+                color: AppColors.accent,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

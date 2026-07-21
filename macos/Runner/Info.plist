@@ -28,5 +28,7 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSContactsUsageDescription</key>
+	<string>This app reads your contacts so it can show them in your address book.</string>
 </dict>
 </plist>
