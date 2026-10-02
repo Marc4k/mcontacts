@@ -19,7 +19,7 @@ A mobile-first web app for over-the-board chess with friends: a chess clock, Elo
 
 - Everyone starts at **1200**.
 - Expected score is `1 / (1 + 10^((Rb − Ra) / 400))`, and a player's rating changes by `K × (score − expected)`, rounded.
-- K-factor follows FIDE: **40** for a player's first 30 games, **20** after that, and **10** once a player reaches 2400.
+- **K = 60** for everyone, always. That's higher than FIDE's 10–40 on purpose: friends play few games, so each one should count. An even game is worth ±30 and an upset up to about ±46. The winner gains exactly what the loser loses.
 - Ratings are never stored. They're recalculated by replaying every game in order, so deleting a game keeps everything consistent.
 
 ## Running

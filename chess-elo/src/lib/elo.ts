@@ -41,7 +41,6 @@ export interface Standing {
   wins: number;
   draws: number;
   losses: number;
-  provisional: boolean;
   /** Rating change from the most recent game, 0 if none. */
   lastDelta: number;
   /** Rating after each game, oldest first (starts with the initial rating). */
@@ -51,19 +50,18 @@ export interface Standing {
 }
 
 export const INITIAL_RATING = 1200;
-export const PROVISIONAL_GAMES = 30;
+/**
+ * Most points one game can move a rating. Higher than FIDE's 10–40 on purpose:
+ * a friend group plays few games, so each one should visibly count.
+ * Same K for everyone keeps it zero-sum: what one player wins, the other loses.
+ */
+export const K_FACTOR = 60;
 
 /** Probability that a player rated `a` scores against a player rated `b`. */
 export function expectedScore(a: number, b: number): number {
   return 1 / (1 + 10 ** ((b - a) / 400));
 }
 
-/** FIDE-style K-factor: 40 while provisional, 10 once at 2400+, 20 otherwise. */
-export function kFactor(rating: number, gamesPlayed: number): number {
-  if (gamesPlayed < PROVISIONAL_GAMES) return 40;
-  if (rating >= 2400) return 10;
-  return 20;
-}
 
 export function whiteScore(result: Result): number {
   return result === "1-0" ? 1 : result === "0-1" ? 0 : 0.5;
@@ -84,7 +82,6 @@ export function computeRatings(players: Player[], games: Game[]) {
       wins: 0,
       draws: 0,
       losses: 0,
-      provisional: true,
       lastDelta: 0,
       history: [{ at: player.createdAt, rating: INITIAL_RATING }],
       form: [],
@@ -103,8 +100,8 @@ export function computeRatings(players: Player[], games: Game[]) {
 
     const sw = whiteScore(game.result);
     const ew = expectedScore(white.rating, black.rating);
-    const whiteDelta = Math.round(kFactor(white.rating, white.games) * (sw - ew));
-    const blackDelta = Math.round(kFactor(black.rating, black.games) * (ew - sw));
+    const whiteDelta = Math.round(K_FACTOR * (sw - ew));
+    const blackDelta = Math.round(K_FACTOR * (ew - sw));
 
     rated.push({
       ...game,
@@ -129,7 +126,6 @@ function apply(s: Standing, delta: number, score: number, at: string) {
   s.lastDelta = delta;
   s.peak = Math.max(s.peak, s.rating);
   s.games += 1;
-  s.provisional = s.games < PROVISIONAL_GAMES;
   s.history.push({ at, rating: s.rating });
   const mark: "W" | "D" | "L" = score === 1 ? "W" : score === 0 ? "L" : "D";
   if (mark === "W") s.wins += 1;
@@ -140,17 +136,14 @@ function apply(s: Standing, delta: number, score: number, at: string) {
 
 export interface Rated {
   rating: number;
-  games: number;
 }
 
 /** Rating changes for white and black for each possible result, before the game is played. */
 export function previewDeltas(white: Rated, black: Rated): Record<Result, { white: number; black: number }> {
   const ew = expectedScore(white.rating, black.rating);
-  const kw = kFactor(white.rating, white.games);
-  const kb = kFactor(black.rating, black.games);
   const at = (sw: number) => ({
-    white: Math.round(kw * (sw - ew)),
-    black: Math.round(kb * (ew - sw)),
+    white: Math.round(K_FACTOR * (sw - ew)),
+    black: Math.round(K_FACTOR * (ew - sw)),
   });
   return { "1-0": at(1), "1/2-1/2": at(0.5), "0-1": at(0) };
 }
