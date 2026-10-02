@@ -11,12 +11,18 @@ const tabs = [
   { href: "/stats", label: "Stats", icon: ChartColumn },
 ] as const;
 
+/** Whole-segment match: "/play" and "/play/x" are in "/play", "/players" is not. */
+function inSection(pathname: string, base: string) {
+  return pathname === base || pathname.startsWith(`${base}/`);
+}
+
 export function TabBar() {
   const pathname = usePathname();
-  if (pathname.startsWith("/play") || pathname.startsWith("/login")) return null;
+  // Hidden on the full-screen clock and the sign-in page.
+  if (inSection(pathname, "/play") || inSection(pathname, "/login")) return null;
 
   const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname.startsWith(href) || (href === "/stats" && pathname.startsWith("/h2h"));
+    href === "/" ? pathname === "/" : inSection(pathname, href) || (href === "/stats" && inSection(pathname, "/h2h"));
 
   return (
     <nav className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/90 backdrop-blur-xl">
