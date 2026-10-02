@@ -250,7 +250,6 @@ function Half({
   if (!clock.started) hint = side === "b" ? "Tap here to start white's clock" : "White moves first";
   else if (flagged) hint = "Time's up";
   else if (isTurn && !live) hint = "Paused";
-  else if (live) hint = "Tap after your move";
 
   return (
     <button
