@@ -25,6 +25,7 @@ A mobile-first web app for over-the-board chess with friends: a chess clock, Elo
 
 ```bash
 npm install
+cp .env.example .env.local   # set APP_PASSWORD
 npm run dev        # http://localhost:3000
 npm test           # Elo + stats unit tests
 npm run build && npm start
@@ -36,4 +37,17 @@ Open the app on your phone and use "Add to Home Screen" so it runs fullscreen li
 
 Everything is stored on the server under `data/`: `db.json` for players and games, and `photos/` for player pictures. Set `DATA_DIR` to put it elsewhere. Run the app somewhere with a persistent disk (a VPS, a Raspberry Pi or a Docker volume) so every phone sees the same leaderboard. Serverless hosts like Vercel don't keep files between requests. Back up the `data/` folder to keep your history.
 
-There's no login. Anyone who can open the URL can add players and record games, so keep it on your home network or behind your host's access control.
+## Password
+
+The app is locked behind a single password. Set it before starting:
+
+```bash
+cp .env.example .env.local   # then edit APP_PASSWORD
+```
+
+- Every page, photo and action needs a valid session. Without one, pages redirect to the sign-in screen and everything else gets a 401.
+- Signing in sets an HTTP-only cookie that lasts 90 days. You can sign out from the bottom of the Players tab.
+- If `APP_PASSWORD` isn't set, the app stays locked and the sign-in screen says so.
+- Changing `APP_PASSWORD` signs out every device, unless you set a separate `AUTH_SECRET`.
+- After 10 wrong attempts from one IP address, sign-in is blocked for 15 minutes.
+- Use HTTPS when the app is reachable from the internet. Over plain HTTP the password and cookie aren't encrypted, which is only acceptable on your home network.

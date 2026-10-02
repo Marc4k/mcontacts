@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight, LogOut, Plus } from "lucide-react";
+import { logout } from "@/app/login/actions";
 import { Avatar } from "@/components/avatar";
 import { EmptyState, PageHeader, PrimaryLink } from "@/components/ui";
 import { getRatings } from "@/lib/store";
@@ -56,6 +57,11 @@ export default async function PlayersPage() {
           ))}
         </ul>
       )}
+      <form action={logout} className="mt-8 text-center">
+        <button type="submit" className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-2">
+          <LogOut className="h-4 w-4" /> Sign out
+        </button>
+      </form>
     </>
   );
 }

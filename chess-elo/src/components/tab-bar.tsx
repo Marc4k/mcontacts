@@ -13,7 +13,7 @@ const tabs = [
 
 export function TabBar() {
   const pathname = usePathname();
-  if (pathname.startsWith("/play")) return null;
+  if (pathname.startsWith("/play") || pathname.startsWith("/login")) return null;
 
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 

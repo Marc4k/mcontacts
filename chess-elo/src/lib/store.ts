@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { connection } from "next/server";
+import { requireSession } from "./auth";
 import { computeRatings, type Game, type Player, type Result, type TimeControl } from "./elo";
 
 interface Data {
@@ -49,6 +50,7 @@ export class ValidationError extends Error {}
 
 export async function getRatings() {
   await connection();
+  await requireSession();
   const { players, games } = await load();
   return computeRatings(players, games);
 }

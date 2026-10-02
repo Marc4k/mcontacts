@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { assertSession, UnauthorizedError } from "@/lib/auth";
 import type { RatedGame } from "@/lib/elo";
 import * as store from "@/lib/store";
 
@@ -9,6 +10,7 @@ export type FormState = { error?: string };
 
 function message(err: unknown) {
   if (err instanceof store.ValidationError) return err.message;
+  if (err instanceof UnauthorizedError) return "You've been signed out. Reload the page and sign in again.";
   console.error(err);
   return "Something went wrong. Please try again.";
 }
@@ -16,6 +18,7 @@ function message(err: unknown) {
 export async function savePlayer(_prev: FormState, formData: FormData): Promise<FormState> {
   let id: string;
   try {
+    await assertSession();
     const player = await store.savePlayer({
       id: (formData.get("id") as string) || undefined,
       name: String(formData.get("name") ?? ""),
@@ -32,6 +35,7 @@ export async function savePlayer(_prev: FormState, formData: FormData): Promise<
 
 export async function deletePlayer(id: string): Promise<FormState> {
   try {
+    await assertSession();
     await store.deletePlayer(id);
   } catch (err) {
     return { error: message(err) };
@@ -44,6 +48,7 @@ export async function recordGame(
   input: store.NewGame,
 ): Promise<{ game: RatedGame; error?: undefined } | { error: string; game?: undefined }> {
   try {
+    await assertSession();
     const game = await store.addGame(input);
     revalidatePath("/", "layout");
     return { game };
@@ -54,6 +59,7 @@ export async function recordGame(
 
 export async function deleteGame(id: string): Promise<FormState> {
   try {
+    await assertSession();
     await store.deleteGame(id);
   } catch (err) {
     return { error: message(err) };
