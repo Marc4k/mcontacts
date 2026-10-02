@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Flag, Pause, Play, X } from "lucide-react";
+import { Flag, Pause, Play, Volume2, VolumeX, X } from "lucide-react";
 import type { TimeControl } from "@/lib/elo";
 import { Avatar } from "../avatar";
+import { isMuted, playClick, playFlag, playLowTime, setMuted, unlockAudio } from "./sounds";
 import { formatClock, remainingNow, type ClockState, type PlayPlayer, type Side } from "./types";
 
 const LOW_MS = 20_000;
@@ -61,7 +62,17 @@ export function ChessClock({
   useLayoutEffect(() => {
     clockRef.current = clock;
   }, [clock]);
+  const [muted, setMutedState] = useState(isMuted);
+  const lastWarned = useRef<number | null>(null);
   useWakeLock();
+
+  // Browsers only allow audio after a touch. Unlock on the first touch anywhere,
+  // e.g. after a reload mid-game, so low-time ticks aren't silent.
+  useEffect(() => {
+    unlockAudio();
+    window.addEventListener("pointerdown", unlockAudio, { capture: true });
+    return () => window.removeEventListener("pointerdown", unlockAudio, { capture: true });
+  }, []);
 
   const running = clock.runningSince !== null;
 
@@ -71,12 +82,20 @@ export function ChessClock({
     const tick = () => {
       const t = Date.now();
       const c = clockRef.current;
-      if (c.runningSince !== null && remainingNow(c, c.active, t) <= 0) {
+      const left = c.runningSince !== null ? remainingNow(c, c.active, t) : Infinity;
+      if (left <= 0) {
         buzz([300, 100, 300]);
+        playFlag();
         const next = { ...c, remaining: { ...c.remaining, [c.active]: 0 }, runningSince: null, flagged: c.active };
         clockRef.current = next;
         onFlag(next);
         return;
+      }
+      // One tick per second for the last 10 seconds.
+      const second = Math.ceil(left / 1000);
+      if (left < 10_000 && second !== lastWarned.current) {
+        lastWarned.current = second;
+        playLowTime();
       }
       setNow(t);
       frame = requestAnimationFrame(tick);
@@ -98,6 +117,7 @@ export function ChessClock({
   }
 
   function press(side: Side) {
+    unlockAudio();
     const c = clockRef.current;
     if (c.flagged) return;
     const t = Date.now();
@@ -105,6 +125,7 @@ export function ChessClock({
       // Like a real clock: black presses to start white's time.
       if (side !== "b") return;
       buzz(20);
+      playClick();
       commit({ ...c, started: true, active: "w", runningSince: t });
       return;
     }
@@ -113,6 +134,8 @@ export function ChessClock({
     if (left <= 0) return;
     const other: Side = side === "w" ? "b" : "w";
     buzz(15);
+    playClick();
+    lastWarned.current = null;
     commit({
       ...c,
       remaining: { ...c.remaining, [side]: left + tc.inc * 1000 },
@@ -123,6 +146,7 @@ export function ChessClock({
   }
 
   function togglePause() {
+    unlockAudio();
     const c = clockRef.current;
     if (!c.started || c.flagged) {
       if (!c.started) press("b");
@@ -144,7 +168,7 @@ export function ChessClock({
         rotated
       />
 
-      <div className="flex shrink-0 items-center justify-between gap-3 px-4 py-2">
+      <div className="flex shrink-0 items-center justify-between gap-2 px-3 py-2">
         <ControlButton
           label="Leave"
           onClick={() => {
@@ -152,6 +176,17 @@ export function ChessClock({
           }}
         >
           <X className="h-5 w-5" />
+        </ControlButton>
+        <ControlButton
+          label={muted ? "Turn sound on" : "Mute sound"}
+          onClick={() => {
+            unlockAudio();
+            setMuted(!muted);
+            setMutedState(!muted);
+            if (muted) playClick();
+          }}
+        >
+          {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
         </ControlButton>
         <button
           type="button"
@@ -259,7 +294,7 @@ function ControlButton({ label, onClick, children }: { label: string; onClick: (
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="flex h-14 w-14 items-center justify-center rounded-full bg-surface text-ink shadow-sm ring-1 ring-line active:scale-95"
+      className="flex h-14 w-12 shrink-0 items-center justify-center rounded-full bg-surface text-ink shadow-sm ring-1 ring-line active:scale-95"
     >
       {children}
     </button>

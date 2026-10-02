@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Pencil, Swords } from "lucide-react";
+import { ChevronRight, Pencil, Swords } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { RatingChart } from "@/components/rating-chart";
 import { Delta, Outcome, PageHeader } from "@/components/ui";
@@ -128,7 +128,7 @@ export default async function PlayerPage({ params }: PageProps<"/players/[id]">)
                 const opp = byId.get(h.opponentId)!;
                 return (
                   <li key={h.opponentId}>
-                    <Link href={`/players/${opp.id}`} className="flex items-center gap-3 px-4 py-3 active:bg-surface-2">
+                    <Link href={`/h2h?a=${id}&b=${opp.id}`} className="flex items-center gap-3 px-4 py-3 active:bg-surface-2">
                       <Avatar player={opp} size={36} />
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-semibold">{opp.name}</div>
@@ -137,6 +137,7 @@ export default async function PlayerPage({ params }: PageProps<"/players/[id]">)
                         </div>
                       </div>
                       <Delta value={h.eloNet} />
+                      <ChevronRight className="-mr-1 h-4 w-4 text-muted" />
                     </Link>
                   </li>
                 );

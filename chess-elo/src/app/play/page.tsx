@@ -6,7 +6,8 @@ import { getRatings } from "@/lib/store";
 
 export const metadata: Metadata = { title: "New match" };
 
-export default async function PlayPage() {
+export default async function PlayPage({ searchParams }: PageProps<"/play">) {
+  const { white, black } = await searchParams;
   const { standings } = await getRatings();
   const players = standings
     .map((s) => ({
@@ -18,7 +19,11 @@ export default async function PlayPage() {
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  if (players.length >= 2) return <PlayFlow players={players} />;
+  if (players.length >= 2) {
+    const preset =
+      typeof white === "string" && typeof black === "string" ? { whiteId: white, blackId: black } : undefined;
+    return <PlayFlow players={players} preset={preset} />;
+  }
 
   return (
     <>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ChevronRight, Swords } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { EmptyState, PageHeader, PrimaryLink } from "@/components/ui";
 import type { Player } from "@/lib/elo";
@@ -62,6 +63,17 @@ export default async function StatsPage() {
     <>
       <PageHeader title="Stats" subtitle={`${games.length} games in the club`} />
 
+      <Link href="/h2h" className="card mx-5 mb-4 flex items-center gap-3 px-4 py-3.5 active:scale-[0.99]">
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ink text-white">
+          <Swords className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="font-semibold">Head to head</div>
+          <div className="text-xs text-muted">Compare any two players</div>
+        </div>
+        <ChevronRight className="h-5 w-5 text-muted" />
+      </Link>
+
       <section className="card mx-5 p-4">
         <h2 className="mb-3 text-sm font-semibold">Who wins?</h2>
         <div className="flex h-3 gap-0.5 overflow-hidden rounded-full">
@@ -93,7 +105,7 @@ export default async function StatsPage() {
           />
         )}
         {rivalry && rivalry.n > 1 && (
-          <div className="flex items-center gap-3 px-4 py-3">
+          <Link href={`/h2h?a=${rivalry.a}&b=${rivalry.b}`} className="flex items-center gap-3 px-4 py-3 active:bg-surface-2">
             <div className="flex -space-x-3">
               <Avatar player={byId.get(rivalry.a)!} size={36} className="ring-2 ring-white" />
               <Avatar player={byId.get(rivalry.b)!} size={36} className="ring-2 ring-white" />
@@ -105,7 +117,7 @@ export default async function StatsPage() {
               </div>
             </div>
             <span className="tabular text-sm text-ink-2">{rivalry.n} games</span>
-          </div>
+          </Link>
         )}
       </section>
 

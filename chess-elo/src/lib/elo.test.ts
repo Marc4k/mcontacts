@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { computeRatings, expectedScore, kFactor, previewDeltas, INITIAL_RATING } from "./elo.ts";
-import { playerStats } from "./stats.ts";
+import { matchup, playerStats } from "./stats.ts";
 
 test("expected score is 0.5 for equal ratings and symmetric", () => {
   assert.equal(expectedScore(1500, 1500), 0.5);
@@ -74,4 +74,28 @@ test("player stats track streaks, colors and head-to-head", () => {
   assert.equal(s.bestWinStreak, 2);
   assert.equal(s.scorePct, 63);
   assert.equal(s.headToHead[0].games, 4);
+});
+
+test("matchup counts results from both sides", () => {
+  const trio = [...players, { id: "c", name: "Cleo", createdAt: "2026-01-01T00:00:00.000Z" }];
+  const g = (id: string, w: string, b: string, result: "1-0" | "0-1" | "1/2-1/2", day: number) => ({
+    id, whiteId: w, blackId: b, result, playedAt: `2026-01-0${day}T00:00:00.000Z`,
+  });
+  const { games } = computeRatings(trio, [
+    g("1", "a", "b", "1-0", 2),
+    g("2", "a", "c", "0-1", 3),
+    g("3", "b", "a", "1-0", 4),
+    g("4", "b", "a", "1-0", 5),
+    g("5", "a", "b", "1/2-1/2", 6),
+  ]);
+  const m = matchup("a", "b", games);
+  assert.equal(m.games.length, 4, "game vs Cleo excluded");
+  assert.deepEqual([m.a.wins, m.a.draws, m.a.losses], [1, 1, 2]);
+  assert.deepEqual([m.b.wins, m.b.draws, m.b.losses], [2, 1, 1]);
+  assert.equal(m.a.points + m.b.points, 4);
+  assert.equal(m.a.eloNet, -m.b.eloNet, "equal K-factors, so gains mirror");
+  assert.deepEqual(m.a.asWhite, { wins: 1, draws: 1, losses: 0 });
+  assert.deepEqual(m.b.asWhite, { wins: 2, draws: 0, losses: 0 });
+  assert.deepEqual(m.streak, { holder: "draw", count: 1 });
+  assert.equal(m.a.biggestWin?.id, "1");
 });

@@ -117,3 +117,49 @@ export function playerStats(id: string, standings: Standing[], games: RatedGame[
     games: mine,
   };
 }
+
+export interface Matchup {
+  games: RatedGame[];
+  /** Results from A's point of view. */
+  a: Record3 & { points: number; eloNet: number; asWhite: Record3; biggestWin: RatedGame | null };
+  b: Record3 & { points: number; eloNet: number; asWhite: Record3; biggestWin: RatedGame | null };
+  streak: { holder: "a" | "b" | "draw"; count: number } | null;
+}
+
+/** `games` must be newest first. */
+export function matchup(aId: string, bId: string, games: RatedGame[]): Matchup {
+  const between = games.filter(
+    (g) => (g.whiteId === aId && g.blackId === bId) || (g.whiteId === bId && g.blackId === aId),
+  );
+  const side = () => ({ ...empty(), points: 0, eloNet: 0, asWhite: empty(), biggestWin: null as RatedGame | null });
+  const a = side();
+  const b = side();
+  const gain = (g: RatedGame, id: string) => (g.whiteId === id ? g.whiteDelta : g.blackDelta);
+
+  for (const g of between) {
+    const aWhite = g.whiteId === aId;
+    const winner = g.result === "1/2-1/2" ? null : (g.result === "1-0") === aWhite ? "a" : "b";
+    const outA = winner === "a" ? "W" : winner === "b" ? "L" : "D";
+    const outB = winner === "b" ? "W" : winner === "a" ? "L" : "D";
+    tally(a, outA);
+    tally(b, outB);
+    tally(aWhite ? a.asWhite : b.asWhite, aWhite ? outA : outB);
+    a.points += outA === "W" ? 1 : outA === "D" ? 0.5 : 0;
+    b.points += outB === "W" ? 1 : outB === "D" ? 0.5 : 0;
+    a.eloNet += gain(g, aId);
+    b.eloNet += gain(g, bId);
+    if (winner === "a" && (!a.biggestWin || gain(g, aId) > gain(a.biggestWin, aId))) a.biggestWin = g;
+    if (winner === "b" && (!b.biggestWin || gain(g, bId) > gain(b.biggestWin, bId))) b.biggestWin = g;
+  }
+
+  let streak: Matchup["streak"] = null;
+  for (const g of between) {
+    const aWhite = g.whiteId === aId;
+    const holder = g.result === "1/2-1/2" ? "draw" : (g.result === "1-0") === aWhite ? "a" : "b";
+    if (!streak) streak = { holder, count: 1 };
+    else if (streak.holder === holder) streak.count += 1;
+    else break;
+  }
+
+  return { games: between, a, b, streak };
+}

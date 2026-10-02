@@ -15,7 +15,8 @@ export function TabBar() {
   const pathname = usePathname();
   if (pathname.startsWith("/play") || pathname.startsWith("/login")) return null;
 
-  const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+  const isActive = (href: string) =>
+    href === "/" ? pathname === "/" : pathname.startsWith(href) || (href === "/stats" && pathname.startsWith("/h2h"));
 
   return (
     <nav className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/90 backdrop-blur-xl">

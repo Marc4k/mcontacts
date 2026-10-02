@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { recordGame } from "@/app/actions";
 import type { Result, TimeControl } from "@/lib/elo";
@@ -32,7 +32,14 @@ function write(key: string, value: unknown) {
 
 type Last = { whiteId?: string; blackId?: string; tc?: TimeControl };
 
-export function PlayFlow({ players }: { players: PlayPlayer[] }) {
+export function PlayFlow({
+  players,
+  preset,
+}: {
+  players: PlayPlayer[];
+  /** Players to preselect, e.g. from "Play a match" on the head-to-head page. */
+  preset?: { whiteId: string; blackId: string };
+}) {
   const router = useRouter();
   const [loaded, setLoaded] = useState(false);
   const [last, setLast] = useState<Last>({});
@@ -43,7 +50,11 @@ export function PlayFlow({ players }: { players: PlayPlayer[] }) {
   const [saving, startSaving] = useTransition();
 
   // A game in progress survives reloads and the phone locking.
+  // Runs once: later server refreshes (after saving a game) must not reset the screen.
+  const initialized = useRef(false);
   useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
     const saved = read<Match>(MATCH_KEY);
     const valid = saved && players.some((p) => p.id === saved.whiteId) && players.some((p) => p.id === saved.blackId);
     /* eslint-disable react-hooks/set-state-in-effect -- localStorage is only readable after hydration */
@@ -51,10 +62,11 @@ export function PlayFlow({ players }: { players: PlayPlayer[] }) {
       setMatchState(saved);
       setFinishing(!saved.clock || !!saved.clock.flagged);
     }
-    setLast(read<Last>(LAST_KEY) ?? {});
+    const lastSetup = read<Last>(LAST_KEY) ?? {};
+    setLast(preset ? { ...lastSetup, ...preset } : lastSetup);
     setLoaded(true);
     /* eslint-enable react-hooks/set-state-in-effect */
-  }, [players]);
+  }, [players, preset]);
 
   const setMatch = useCallback((m: Match | null) => {
     setMatchState(m);

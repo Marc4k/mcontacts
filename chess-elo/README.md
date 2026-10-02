@@ -6,11 +6,12 @@ A mobile-first web app for over-the-board chess with friends: a chess clock, Elo
 
 - **Players**: name and photo (taken with the camera or picked from the gallery; resized on the phone before upload).
 - **Match setup**: pick who plays white and black, swap or randomize colors, and choose a time control (default **10+5**; presets from 1+0 to 30+20, or custom). Before you start, it shows how much Elo each player would win or lose.
-- **Chess clock**: two halves with the top one rotated for the player across the table. Tap your half after you move; the Fischer increment is added. Black taps first to start white's clock, as on a real clock. It has pause/resume and keeps the screen awake. If you reload, the game picks up where it was.
+- **Chess clock**: two halves with the top one rotated for the player across the table. Tap your half after you move; the Fischer increment is added. Black taps first to start white's clock, as on a real clock. It has pause/resume and keeps the screen awake. If you reload, the game picks up where it was. Sounds: a soft click on every tap, a tick each second in the last 10 seconds, and an alarm when time runs out. The speaker button mutes them, and the setting is remembered.
 - **Finishing**: press the flag to choose white wins, draw or black wins. When a clock runs out, the opponent is preselected and the game is marked "on time". You can also just enter a result without using the clock.
 - **Summary**: the winner, each player's rating before and after, and the Elo gained or lost. Then rematch with colors swapped.
 - **Ranking**: a podium and full table with the last rating change.
 - **Player stats**: rating chart, peak and lowest rating, score %, results as white and as black, streaks, best win, head-to-head records and recent games.
+- **Head to head**: pick any two players to see their record against each other, score, current streak, both ratings on one chart (with the games they played each other marked), a side-by-side comparison, and every game between them. "Play a match" starts a game with both players already picked.
 - **Club stats**: white/draw/black split, most active player, longest streak, biggest upset, top rivalry.
 - **Games**: full history. Deleting a game recalculates everyone's ratings.
 
