@@ -34,6 +34,24 @@ npm run build && npm start
 
 Open the app on your phone and use "Add to Home Screen" so it runs fullscreen like a native app.
 
+## Deploying with Dokploy
+
+1. **Create an Application** and connect this GitHub repo and branch.
+2. **Build:** set the build type to **Dockerfile**, the **Build Path** to `/chess-elo` and the Dockerfile to `Dockerfile`.
+3. **Environment:**
+   ```
+   APP_PASSWORD=<a long password>
+   AUTH_SECRET=<random string, e.g. from: openssl rand -base64 32>
+   ```
+   `AUTH_SECRET` is optional but recommended. Don't set `DATA_DIR`; the image already points it at `/app/data`.
+4. **Volume** (Advanced → Mounts): add a **Volume Mount** with mount path **`/app/data`** and any volume name, e.g. `checkmate-data`. This holds the database and photos. Without it, every redeploy wipes your data.
+5. **Domain:** add your domain with container port **3000** and HTTPS (Let's Encrypt) turned on.
+6. Deploy, then open the domain on your phone and add it to the home screen.
+
+To back up, copy the files out of the `/app/data` volume (`db.json` and the `photos/` folder).
+
+Keep the app at **1 replica**. It stores data in a file, so two copies running at once would overwrite each other.
+
 ## Data
 
 Everything is stored on the server under `data/`: `db.json` for players and games, and `photos/` for player pictures. Set `DATA_DIR` to put it elsewhere. Run the app somewhere with a persistent disk (a VPS, a Raspberry Pi or a Docker volume) so every phone sees the same leaderboard. Serverless hosts like Vercel don't keep files between requests. Back up the `data/` folder to keep your history.

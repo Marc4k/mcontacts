@@ -52,7 +52,10 @@ const failures = new Map<string, { count: number; since: number }>();
 
 export async function clientKey() {
   const h = await headers();
-  return h.get("x-forwarded-for")?.split(",")[0].trim() || h.get("x-real-ip") || "local";
+  // The last hop is the one our reverse proxy (e.g. Traefik) added; earlier
+  // entries come from the client and could be faked to dodge the throttle.
+  const hops = h.get("x-forwarded-for")?.split(",").map((s) => s.trim()).filter(Boolean);
+  return hops?.at(-1) || h.get("x-real-ip") || "local";
 }
 
 export function isThrottled(key: string, now = Date.now()) {
